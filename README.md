@@ -9,4 +9,25 @@ A collection of reusable Claude Code skills. Each skill lives in its own folder 
 
 ## Installation
 
-To use a skill, copy its `.md` file into your project's `.claude/skills/` directory. See each skill's README for additional setup instructions.
+Skills can be installed at the **project level** (available only in that project) or the **user level** (available in all projects).
+
+### Project-level
+
+Copy the skill's `.md` file into your project's `.claude/skills/` directory:
+
+```
+cp check-screenshot/check-screenshot.md /path/to/my-project/.claude/skills/
+```
+
+### User-level
+
+Copy the skill's `.md` file into your global `~/.claude/skills/` directory:
+
+```
+mkdir -p ~/.claude/skills
+cp check-screenshot/check-screenshot.md ~/.claude/skills/
+```
+
+User-level skills are available across all projects without per-project setup.
+
+See each skill's README for additional configuration instructions.
