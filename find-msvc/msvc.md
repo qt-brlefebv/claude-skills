@@ -24,13 +24,15 @@ The user may invoke this skill with optional arguments:
 
 User args: `{{ args }}`
 
-## Step 1: Platform Check
+## Step 1: Platform Check and Temp Directory
 
-Verify we're on Windows. Run:
+Verify we're on Windows and resolve the temp directory in a single Bash call:
+```bash
+uname -s && cygpath -u "$TEMP"
 ```
-uname -s
-```
-If the output does not contain "MINGW", "MSYS", or "CYGWIN" (or if `cmd.exe` is not available), tell the user this skill only works on Windows and stop.
+If `uname` output does not contain "MINGW", "MSYS", or "CYGWIN", tell the user this skill only works on Windows and stop.
+
+Save the second line of output as `TMPDIR` — use this resolved path for ALL temp file operations in later steps (both Write tool and Bash commands). This avoids path mismatches between tools.
 
 ## Step 2: Handle "status" / "clear" Commands
 
@@ -47,21 +49,17 @@ If the user asked for **clear/deactivate**:
 
 ## Step 3: Discover Installations
 
-Scan these directories for `vcvars*.bat` files:
+Scan for vcvars bat files and check for an existing `.msvc_env.sh` in a single Bash call:
+
+```bash
+echo "=== EXISTING ENV ===" && head -4 .msvc_env.sh 2>/dev/null || echo "(none)" && echo "=== INSTALLATIONS ===" && for dir in "/c/Program Files/Microsoft Visual Studio/"*/*"/VC/Auxiliary/Build" "/c/Program Files (x86)/Microsoft Visual Studio/"*/*"/VC/Auxiliary/Build"; do if [ -d "$dir" ]; then echo "--- $dir ---"; ls "$dir"/vcvars*.bat 2>/dev/null; fi; done
+```
+
+This searches:
 - `C:\Program Files\Microsoft Visual Studio\{year}\{edition}\VC\Auxiliary\Build\`
 - `C:\Program Files (x86)\Microsoft Visual Studio\{year}\{edition}\VC\Auxiliary\Build\`
 
 Where `{year}` is 2017, 2019, 2022, 2025 (and any other year directories found) and `{edition}` is Professional, Enterprise, Community, BuildTools, Preview.
-
-Use bash globbing to find them efficiently:
-```bash
-for dir in "/c/Program Files/Microsoft Visual Studio/"*/*"/VC/Auxiliary/Build" "/c/Program Files (x86)/Microsoft Visual Studio/"*/*"/VC/Auxiliary/Build"; do
-  if [ -d "$dir" ]; then
-    echo "=== $dir ==="
-    ls "$dir"/vcvars*.bat 2>/dev/null
-  fi
-done
-```
 
 ## Step 4: Parse & Select
 
@@ -106,19 +104,15 @@ Enter a number to activate:
 
 Once a vcvars bat is selected, capture the environment diff and generate `.msvc_env.sh`.
 
-First, capture the before/after environments:
+Use the `TMPDIR` resolved in Step 1 for ALL temp file paths — in EVERY tool call in this step. Do NOT use `/tmp/` anywhere; always substitute the resolved `TMPDIR`. This is critical because the Write tool and Bash may resolve `/tmp/` to different physical directories on Windows.
+
+**Step 5a:** Capture before/after environments in a single Bash call. Replace `<TMPDIR>` with the bash-style path from Step 1 (e.g. `/c/Users/.../AppData/Local/Temp`), and `<VCVARS_BAT_PATH>` with the Windows-style path:
 
 ```bash
-# Capture env BEFORE vcvars
-powershell.exe -NoProfile -Command "cmd /c 'set'" 2>&1 | sort > /tmp/msvc_env_before.txt
-
-# Capture env AFTER vcvars (replace <VCVARS_BAT_PATH> with the Windows-style path)
-powershell.exe -NoProfile -Command "cmd /c '\"<VCVARS_BAT_PATH>\" >nul 2>&1 && set'" 2>&1 | sort > /tmp/msvc_env_after.txt
+powershell.exe -NoProfile -Command "cmd /c 'set'" 2>&1 | sort > <TMPDIR>/msvc_env_before.txt && powershell.exe -NoProfile -Command "cmd /c '\"<VCVARS_BAT_PATH>\" >nul 2>&1 && set'" 2>&1 | sort > <TMPDIR>/msvc_env_after.txt && echo "Captured before/after environments"
 ```
 
-Then write the following Python script to a temp file and run it. This handles the tricky parts: diffing the environments, converting Windows PATH to bash format, and extracting only the new PATH entries.
-
-Write this to `/tmp/gen_msvc_env.py`:
+**Step 5b:** Use the Write tool to create the Python diff script at `<TMPDIR>/gen_msvc_env.py` (use the **Windows-style** path for the Write tool, e.g. `C:/Users/.../AppData/Local/Temp/gen_msvc_env.py`). This handles diffing the environments, converting Windows PATH to bash format, and extracting only the new PATH entries.
 
 ```python
 import sys, os
@@ -190,20 +184,10 @@ with open(output_path, 'w', newline=chr(10)) as f:
 print(f"OK: wrote {len(lines)} lines to {output_path}")
 ```
 
-Then run it:
+**Step 5c:** Run the script and clean up in a single Bash call (use the **bash-style** `TMPDIR` path here):
 
 ```bash
-python /tmp/gen_msvc_env.py \
-  /tmp/msvc_env_before.txt \
-  /tmp/msvc_env_after.txt \
-  .msvc_env.sh \
-  "VS <YEAR> <EDITION> - <VCVARS_NAME> (<DESCRIPTION>)" \
-  "<VCVARS_BAT_PATH>"
-```
-
-Clean up the temp files when done:
-```bash
-rm -f /tmp/gen_msvc_env.py /tmp/msvc_env_before.txt /tmp/msvc_env_after.txt
+python <TMPDIR>/gen_msvc_env.py <TMPDIR>/msvc_env_before.txt <TMPDIR>/msvc_env_after.txt .msvc_env.sh "VS <YEAR> <EDITION> - <VCVARS_NAME> (<DESCRIPTION>)" "<VCVARS_BAT_PATH>" && rm -f <TMPDIR>/gen_msvc_env.py <TMPDIR>/msvc_env_before.txt <TMPDIR>/msvc_env_after.txt
 ```
 
 ## Step 6: Verify
@@ -216,12 +200,21 @@ source .msvc_env.sh && cl 2>&1 | head -3
 
 This should show the MSVC compiler version banner. Report the result to the user.
 
-## Step 7: Confirm
+## Step 7: Gitignore
+
+If `.gitignore` exists, check whether it already contains `.msvc_env.sh`. If not, append it:
+```bash
+grep -qxF '.msvc_env.sh' .gitignore 2>/dev/null || echo '.msvc_env.sh' >> .gitignore
+```
+If `.gitignore` does not exist, ask the user whether they'd like one created.
+
+## Step 8: Confirm
 
 Tell the user:
 - Which VS version and architecture was activated
 - That `.msvc_env.sh` was written to the project root
 - That subsequent build commands (cmake, cl, nmake, ninja, msbuild, link) will automatically use this environment
+- Whether `.msvc_env.sh` was added to `.gitignore` (or that it was already there)
 - They can run `/msvc status` to check, `/msvc clear` to deactivate, or `/msvc <other args>` to switch
 
 ## Notes
@@ -229,4 +222,3 @@ Tell the user:
 - If `.msvc_env.sh` already exists when activating, warn the user it will be overwritten and which env was previously active.
 - The `vcvarsall.bat` entry should generally not be shown in the menu — it's the umbrella script. The specific vcvars scripts are more explicit.
 - Always use Windows-style paths (backslashes) when invoking bat files via cmd.exe/powershell, but Unix-style paths in the generated bash env script where appropriate.
-- The generated `.msvc_env.sh` should be added to `.gitignore` since it's machine-specific.
