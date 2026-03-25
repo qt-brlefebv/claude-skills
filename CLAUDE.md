@@ -1,17 +1,12 @@
-# find-msvc
+# claude-skills
 
-This project provides the `/msvc` skill (aliases: `/vcvars`, `/find-msvc`) for Claude Code on Windows. It discovers MSVC/Visual Studio installations and activates their developer environment for build commands.
+A collection of reusable Claude Code skills. Each skill lives in its own folder with a skill `.md` file and a README.
 
-## MSVC Environment Integration
+## Skills
 
-When `.msvc_env.sh` exists in the project root, **always source it before running build-related commands**:
+- **[find-msvc](find-msvc/)** — Discover and activate MSVC/Visual Studio developer environments on Windows
+- **[check-screenshot](check-screenshot/)** — View and describe the most recent screenshot(s)
 
-```bash
-source .msvc_env.sh && cmake ...
-source .msvc_env.sh && cl /EHsc main.cpp
-source .msvc_env.sh && ninja
-```
+## Installation
 
-This applies to: `cmake`, `cl`, `cl.exe`, `nmake`, `msbuild`, `link`, `link.exe`, `ninja`, `lib`, `lib.exe`, `rc`, `rc.exe`, `dumpbin`, `ml`, `ml64`, and any other MSVC toolchain command.
-
-If `.msvc_env.sh` does not exist, do not attempt to source it — suggest running `/msvc` first.
+To use a skill, copy its `.md` file into your project's `.claude/skills/` directory. See each skill's README for additional setup instructions.
