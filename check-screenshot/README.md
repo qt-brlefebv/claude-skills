@@ -30,5 +30,5 @@ Replace `<YOUR_SCREENSHOTS_FOLDER>` with the actual path (e.g., `C:/Users/you/Pi
 ## How It Works
 
 1. Lists the screenshots folder sorted by modification time
-2. Reads the image file(s) using Claude's multimodal capabilities
+2. Reads the image file(s) with Claude's multimodal capabilities
 3. Describes what's shown and offers to help with anything related

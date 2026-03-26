@@ -47,7 +47,7 @@ Aliases: `/vcvars`, `/find-msvc`
 ## How It Works
 
 1. Scans standard VS install locations for `vcvars*.bat` files
-2. Runs the selected vcvars bat via PowerShell, capturing the environment before and after
+2. Runs the selected vcvars bat via PowerShell to capture the environment before and after
 3. Diffs the environments and writes the new/changed variables to `.msvc_env.sh`
 4. PATH entries are converted to bash format and prepended (not replaced)
 5. Subsequent build commands source this file per CLAUDE.md instructions

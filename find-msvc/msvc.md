@@ -9,7 +9,7 @@ user_invocable: true
 
 # MSVC Environment Activator
 
-You are activating a Visual Studio / MSVC developer environment on Windows.
+Activate a Visual Studio / MSVC developer environment on Windows.
 
 ## Arguments
 
@@ -112,7 +112,7 @@ Use the `TMPDIR` resolved in Step 1 for ALL temp file paths — in EVERY tool ca
 powershell.exe -NoProfile -Command "cmd /c 'set'" 2>&1 | sort > <TMPDIR>/msvc_env_before.txt && powershell.exe -NoProfile -Command "cmd /c '\"<VCVARS_BAT_PATH>\" >nul 2>&1 && set'" 2>&1 | sort > <TMPDIR>/msvc_env_after.txt && echo "Captured before/after environments"
 ```
 
-**Step 5b:** Use the Write tool to create the Python diff script at `<TMPDIR>/gen_msvc_env.py` (use the **Windows-style** path for the Write tool, e.g. `C:/Users/.../AppData/Local/Temp/gen_msvc_env.py`). This handles diffing the environments, converting Windows PATH to bash format, and extracting only the new PATH entries.
+**Step 5b:** Use the Write tool to create the Python diff script at `<TMPDIR>/gen_msvc_env.py` (use the **Windows-style** path for the Write tool, e.g. `C:/Users/.../AppData/Local/Temp/gen_msvc_env.py`). This diffs the environments, converts Windows PATH to bash format, and extracts only the new PATH entries.
 
 ```python
 import sys, os
@@ -192,7 +192,7 @@ python <TMPDIR>/gen_msvc_env.py <TMPDIR>/msvc_env_before.txt <TMPDIR>/msvc_env_a
 
 ## Step 6: Verify
 
-After generating `.msvc_env.sh`, verify it works:
+Once `.msvc_env.sh` is written, verify it works:
 
 ```bash
 source .msvc_env.sh && cl 2>&1 | head -3
@@ -219,6 +219,6 @@ Tell the user:
 
 ## Notes
 
-- If `.msvc_env.sh` already exists when activating, warn the user it will be overwritten and which env was previously active.
+- If `.msvc_env.sh` already exists, warn the user it will be overwritten and which env was previously active.
 - The `vcvarsall.bat` entry should generally not be shown in the menu — it's the umbrella script. The specific vcvars scripts are more explicit.
-- Always use Windows-style paths (backslashes) when invoking bat files via cmd.exe/powershell, but Unix-style paths in the generated bash env script where appropriate.
+- Always use Windows-style paths (backslashes) when you invoke bat files via cmd.exe/powershell, but Unix-style paths in the generated bash env script where appropriate.
