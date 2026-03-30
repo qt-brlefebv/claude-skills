@@ -1,11 +1,11 @@
 ---
-name: notify-ntfy
+name: ntfy
 description: >
   Send push notifications via ntfy.sh when Claude is waiting. Use for setup,
   testing, configuring, enabling/disabling ntfy notifications. Trigger on
   "ntfy", "notifications", "notify", "push notification".
 aliases:
-  - ntfy
+  - notify-ntfy
 user_invocable: true
 ---
 
