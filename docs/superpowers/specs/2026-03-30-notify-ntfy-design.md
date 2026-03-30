@@ -10,7 +10,7 @@ When Claude Code finishes work and needs user input, there's no way to know with
 
 ## Approach
 
-**Approach C: Wrapper script does everything.** A single bundled Python script (`ntfy-hook.py`) handles timer logic, notification sending, and config management. The hooks in `settings.json` are write-once and never need rewriting — all behavior is controlled by a config file the script reads at runtime.
+**Wrapper script does everything.** A single bundled Python script (`ntfy-hook.py`) handles timer logic, notification sending, and config management. The hooks in `settings.json` are write-once and never need rewriting — all behavior is controlled by a config file the script reads at runtime.
 
 ## Skill Structure
 
@@ -145,7 +145,7 @@ Uses only `urllib.request` (stdlib) — no external dependencies. 10-second time
 ```json
 {
   "topic": "<USERNAME>_claude_<HOSTNAME>",
-  "timer_seconds": 30,
+  "timer_seconds": 60,
   "server": "https://ntfy.sh",
   "enabled": true
 }
@@ -169,7 +169,7 @@ User args: `{{ args }}`
 First-time guided setup:
 
 1. **Verify installation** — check `ntfy-hook.py` exists alongside the skill `.md`. If not, error with install instructions (copy `notify-ntfy/` folder to `~/.claude/skills/`).
-2. **Generate config** — create `ntfy-config.json` with defaults (`<USERNAME>_claude_<HOSTNAME>`, 30s timer). If config already exists, show current values and ask if user wants to regenerate.
+2. **Generate config** — create `ntfy-config.json` with defaults (`<USERNAME>_claude_<HOSTNAME>`, 60s timer). If config already exists, show current values and ask if user wants to regenerate.
 3. **Guide phone subscription** — display the topic name and instruct the user to:
    - Install the ntfy app (Android/iOS)
    - Subscribe to the displayed topic
@@ -184,7 +184,7 @@ Send a test notification immediately. Runs `python <path>/ntfy-hook.py test` and
 ### `/ntfy config [key] [value]`
 
 Update a config value. Supported keys:
-- `timer <seconds>` — e.g., `/ntfy config timer 60`
+- `timer <seconds>` — e.g., `/ntfy config timer 90`
 - `topic <name>` — e.g., `/ntfy config topic my_custom_topic`
 - `server <url>` — e.g., `/ntfy config server https://my.ntfy.server`
 
