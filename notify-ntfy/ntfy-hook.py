@@ -17,7 +17,7 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "ntfy-config.json")
 
 def default_config():
     return {
-        "topic": f"{getpass.getuser()}_claude_{platform.node()}",
+        "topic": f"{getpass.getuser()}_claude_{platform.node().split('.')[0]}",
         "timer_seconds": 60,
         "server": "https://ntfy.sh",
         "enabled": True,
@@ -147,7 +147,7 @@ def cmd_notify():
 
     remove_marker()
 
-    hostname = platform.node()
+    hostname = platform.node().split(".")[0]
     project = os.path.basename(os.getcwd())
     title = f"Claude Code [{hostname} :: {project}]"
     body = f"Waiting for: {tool_name}" if tool_name else "Waiting for: your response"
@@ -175,7 +175,7 @@ def cmd_cancel():
 
 def cmd_test():
     config = ensure_config()
-    hostname = platform.node()
+    hostname = platform.node().split(".")[0]
     project = os.path.basename(os.getcwd())
     title = f"Claude Code [{hostname} :: {project}]"
     body = "Test notification — ntfy is working!"
